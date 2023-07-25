@@ -141,7 +141,6 @@ fn show_word(secret_word: &str, correct_guesses: &HashSet<String>) {
 fn draw_start_game() {
     println!("{}", START_PAGE_MESSAGE);
 }
-
 fn draw_hanging() {
     println!("{}", HANGING);
 }
@@ -157,10 +156,7 @@ fn draw_hangman_l_hand() {
 fn draw_hangman_r_hand() {
     println!("{}", HANGMAN_RIGHT_HAND);
 }
-fn draw_hangman_l_leg() {
-    println!("{}", HANGMAN_LEFT_LEG);
-
-}
+fn draw_hangman_l_leg() { println!("{}", HANGMAN_LEFT_LEG);}
 fn draw_hangman_r_leg() {
     println!("{}", HANGMAN_RIGHT_LEG);
 }

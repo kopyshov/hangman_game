@@ -32,13 +32,12 @@ fn game_round() {
         let mut mistakes: usize = 0;
         let secret_word = get_secret_word(); //Генерируем секретное слово
 
-        let mut secret_word_chars: HashSet<String> = HashSet::new(); //Кладем буквы секретного слова в HashSet
+        let mut secret_word_chars = HashSet::new(); //Кладем буквы секретного слова в HashSet
         for char in secret_word.chars() {
-            let char = char.to_string();
             secret_word_chars.insert(char);
         }
-        let mut correct_guesses: HashSet<String> = HashSet::new();
-        let mut wrong_guesses: HashSet<String> = HashSet::new();
+        let mut correct_guesses: HashSet<char> = HashSet::new();
+        let mut wrong_guesses: HashSet<char> = HashSet::new();
         draw_image(&secret_word, &correct_guesses, &game_images, mistakes, "");
         'outer: loop {
             if secret_word_chars == correct_guesses {
@@ -54,10 +53,10 @@ fn game_round() {
 
             let mut guess: String = String::new();
             io::stdin().read_line(&mut guess).expect("Неверный ввод");
-            let guess: String = <&str>::clone(&guess.trim()).to_string();
+            let guess: char = guess.chars().next().unwrap();
             if is_unique(&correct_guesses, &wrong_guesses, &guess) {
                 println!("{}", is_unique(&correct_guesses, &wrong_guesses, &guess));
-                if compare_guess(&secret_word, &guess) {
+                if compare_guess(&secret_word, guess) {
                     correct_guesses.insert(guess);
                     draw_image(&secret_word, &correct_guesses, &game_images, mistakes,RIGHT_GUESS);
                 } else {
@@ -90,18 +89,18 @@ fn is_go_on() -> bool {
     false
 }
 
-fn is_unique(correct_guesses: &HashSet<String>,
-             wrong_guesses: &HashSet<String>,
-             guess: &String) -> bool {
+fn is_unique(correct_guesses: &HashSet<char>,
+             wrong_guesses: &HashSet<char>,
+             guess: &char) -> bool {
     !wrong_guesses.contains(guess)
         && !correct_guesses.contains(guess)
 }
 
 fn compare_guess(secret_word: &str,
-                 guess: &str) -> bool
+                 guess: char) -> bool
     {
         let guess = guess.to_owned();
-        if secret_word.contains(&guess) {
+        if secret_word.contains(guess) {
             return true;
         }
         false
@@ -114,7 +113,7 @@ fn get_secret_word() -> String {
     secret_word
 }
 
-fn draw_image(secret_word: &str, correct_guesses: &HashSet<String>, game_images: &[fn()], mistakes: usize, message: &str) {
+fn draw_image(secret_word: &str, correct_guesses: &HashSet<char>, game_images: &[fn()], mistakes: usize, message: &str) {
     let term = console::Term::stdout();
     term.clear_screen().expect("Не удалось очистить консоль");
 
@@ -126,9 +125,8 @@ fn draw_image(secret_word: &str, correct_guesses: &HashSet<String>, game_images:
     }
 }
 
-fn show_word(secret_word: &str, correct_guesses: &HashSet<String>) {
+fn show_word(secret_word: &str, correct_guesses: &HashSet<char>) {
     for char in secret_word.chars() {
-        let char = String::from(char);
         if correct_guesses.contains(&char) {
             print!("[{char}]");
         } else {

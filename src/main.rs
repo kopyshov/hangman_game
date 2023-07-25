@@ -28,7 +28,8 @@ fn game_round() {
 
     let mut in_game = true;
     while in_game {
-        let mistakes: usize = 0;
+
+        let mut mistakes: usize = 0;
         let secret_word = get_secret_word(); //Генерируем секретное слово
 
         let mut secret_word_chars: HashSet<String> = HashSet::new(); //Кладем буквы секретного слова в HashSet
@@ -38,38 +39,62 @@ fn game_round() {
         }
         let mut correct_guesses: HashSet<String> = HashSet::new();
         let mut wrong_guesses: HashSet<String> = HashSet::new();
-        draw_image(&game_images, mistakes, "");
-        loop {
-            if check_game_result(&secret_word_chars,
-                              &correct_guesses,
-                              mistakes,
-                              &game_images) {
-                in_game = false;
-                break;
+        draw_image(&secret_word, &correct_guesses, &game_images, mistakes, "");
+        'outer: loop {
+            if secret_word_chars == correct_guesses {
+                draw_image(&secret_word, &correct_guesses, &game_images, mistakes,WIN_GAME);
+                in_game = is_go_on();
+                break 'outer;
+            }
+            if mistakes as i32 == 6 {
+                draw_image(&secret_word, &secret_word_chars, &game_images, mistakes,GAME_OVER);
+                in_game = is_go_on();
+                break 'outer;
             }
 
             let mut guess: String = String::new();
             io::stdin().read_line(&mut guess).expect("Неверный ввод");
             let guess: String = guess.trim().clone().to_string();
             if is_unique(&correct_guesses, &wrong_guesses, &guess) {
+                println!("{}", is_unique(&correct_guesses, &wrong_guesses, &guess));
                 if compare_guess(&secret_word, &guess) {
                     correct_guesses.insert(guess);
-                    draw_image(&game_images, mistakes,RIGHT_GUESS);
+                    draw_image(&secret_word, &correct_guesses, &game_images, mistakes,RIGHT_GUESS);
                 } else {
                     wrong_guesses.insert(guess);
-                    draw_image(&game_images, mistakes,WRONG_GUESS);
+                    mistakes += 1;
+                    draw_image(&secret_word, &correct_guesses, &game_images, mistakes,WRONG_GUESS);
                 }
             } else {
-                draw_image(&game_images, mistakes,REPEATED_GUESS);
+                draw_image(&secret_word, &correct_guesses, &game_images, mistakes,REPEATED_GUESS);
             }
         }
     }
 }
+
+fn is_go_on() -> bool {
+    let mut command_button = String::new();
+    io::stdin().read_line(&mut command_button).expect("Некорректный выбор.");
+    let command_button = command_button.trim();
+    if command_button.eq_ignore_ascii_case("Y") {
+        return true;
+    }
+    //почему здесь нельзя написать
+/*
+    if command_button.eq_ignore_ascii_case("Y") {
+        return  true;
+    } else if command_button.eq_ignore_ascii_case("N") {
+        return false;
+    }
+    */
+    return false;
+}
+
 fn is_unique(correct_guesses: &HashSet<String>,
              wrong_guesses: &HashSet<String>,
              guess: &String) -> bool {
     return !wrong_guesses.contains(guess)
-        || !correct_guesses.contains(guess);
+        && !correct_guesses.contains(guess);
 }
 
 fn compare_guess(secret_word: &String,
@@ -89,37 +114,29 @@ fn get_secret_word() -> String {
     return secret_word;
 }
 
-fn check_game_result(secret_word_chars: &HashSet<String>,
-                     correct_guesses: &HashSet<String>,
-                     mistakes: usize,
-                     game_images: &Vec<fn()>) -> bool {
-    if secret_word_chars == correct_guesses {
-        draw_image(game_images, mistakes,WIN_GAME);
-    }
-    if mistakes == 6 {
-        draw_image(game_images, mistakes,GAME_OVER);
-    }
-    loop {
-        let mut command_button = String::new();
-        io::stdin().read_line(&mut command_button).expect("Некорректный выбор.");
-        if command_button == "Y" {
-            return true;
-        } else if command_button == "N" {
-            return  false;
-        } else {
-            continue;
-        }
-    }
-}
-
-fn draw_image(game_images: &Vec<fn()>, mistakes: usize, message: &str) {
+fn draw_image(secret_word: &String, correct_guesses: &HashSet<String>, game_images: &Vec<fn()>, mistakes: usize, message: &str) {
     let term = console::Term::stdout();
     term.clear_screen().expect("Не удалось очистить консоль");
+
     game_images[mistakes]();
+    show_word(secret_word, correct_guesses);
     println!("{}", message);
-    println!("{}", ENTER_GUESS);
+    if message != GAME_OVER {
+        println!("{}", ENTER_GUESS);
+    }
 }
 
+fn show_word(secret_word: &String, correct_guesses: &HashSet<String>) {
+    for char in secret_word.chars() {
+        let char = String::from(char);
+        if correct_guesses.contains(&char) {
+            print!("[{char}]");
+        } else {
+            print!("[ ]");
+        }
+    }
+    println!();
+}
 
 fn draw_start_game() {
     println!("{}", START_PAGE_MESSAGE);

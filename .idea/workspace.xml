@@ -7,8 +7,9 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bae58ab3-9154-40e2-969c-d9d648695c3e" name="Changes" comment="Fixed syntax errors">
+    <list default="true" id="bae58ab3-9154-40e2-969c-d9d648695c3e" name="Changes" comment="Change String to chars">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -16,11 +17,17 @@
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="Git.Settings">
+    <option name="RESET_MODE" value="MIXED" />
+  </component>
   <component name="MacroExpansionManager">
     <option name="directoryName" value="92opmz2u" />
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="ProjectErrors" />
   </component>
   <component name="ProjectId" id="2SqUbLoPl4A3bUpy5LltwGEXLLp" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
@@ -84,7 +91,10 @@
       <workItem from="1690214951607" duration="12614000" />
       <workItem from="1690301425834" duration="1211000" />
       <workItem from="1690303648082" duration="938000" />
-      <workItem from="1690304611344" duration="1665000" />
+      <workItem from="1690304611344" duration="2672000" />
+      <workItem from="1690705188391" duration="100000" />
+      <workItem from="1690705308427" duration="12211000" />
+      <workItem from="1690740847853" duration="5792000" />
     </task>
     <task id="LOCAL-00001" summary="Insert game-logic">
       <created>1690025723222</created>
@@ -121,18 +131,37 @@
       <option name="project" value="LOCAL" />
       <updated>1690304765881</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="Change String to chars">
+      <created>1690307213765</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1690307213765</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Insert game-logic" />
     <MESSAGE value="Refactoring with head" />
     <MESSAGE value="Add loop in game" />
     <MESSAGE value="Fixed syntax errors" />
-    <option name="LAST_COMMIT_MESSAGE" value="Fixed syntax errors" />
+    <MESSAGE value="Change String to chars" />
+    <option name="LAST_COMMIT_MESSAGE" value="Change String to chars" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

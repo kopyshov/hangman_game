@@ -1,49 +1,75 @@
 use std::collections::HashSet;
+use std::fmt::{Display, Formatter};
 use std::io;
 use rand::Rng;
-use crate::GameState::{ExitGame, GameOver, GuessChecked, RoundStarted, StartGame};
+use crate::RoundState::{LooseGame, RepeatedGuess, RightGuess, WinGame, WrongGuess, WrongLength};
 
 fn main() {
     start_game();
 }
 
 fn start_game() {
-    let mut game_state = StartGame;
-    write_message(&mut game_state);
+    println!("{}", START_PAGE_MESSAGE);
     loop {
-        game_state_control(&mut game_state);
-        if game_state == RoundStarted {
-            start_round(&mut game_state);
-        }
-        if game_state == ExitGame {
+        let start_new_game = new_game();
+        if start_new_game {
+            start_round();
+        } else {
             break;
         }
     }
 }
 
 #[derive(PartialEq)]
-enum GameState {
-    StartGame,
+enum RoundState {
     RoundStarted,
-    GuessChecked(String),
-    GameOver(String),
-    ExitGame,
+    RightGuess,
+    WrongGuess,
+    RepeatedGuess,
+    WrongLength,
+    WrongLanguage,
+    WinGame,
+    LooseGame,
 }
 
-fn game_state_control(game_state: &mut GameState) {
-    loop {
-        let command_input = players_input();
-        if command_input.eq_ignore_ascii_case("Y") {
-            *game_state = RoundStarted;
-            break;
-        } else {
-            *game_state = ExitGame;
-            break;
+impl RoundState {
+    fn is_game_over(&self) -> bool {
+        match self {
+            WinGame => true,
+            LooseGame => true,
+            _ => false,
         }
     }
 }
 
-fn start_round(game_state: &mut GameState) {
+impl Display for RoundState {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match *self {
+            RoundState::RoundStarted => write!(f, "{ENTER_GUESS}"),
+            RightGuess => write!(f, "{RIGHT_GUESS}\n {ENTER_GUESS}"),
+            WrongGuess => write!(f, "{WRONG_GUESS}\n {ENTER_GUESS}"),
+            RepeatedGuess => write!(f, "{REPEATED_GUESS}\n {ENTER_GUESS}"),
+            WrongLength => write!(f, "{WRONG_LENGTH}\n {ENTER_GUESS}"),
+            RoundState::WrongLanguage => write!(f, "{WRONG_LANG}\n {ENTER_GUESS}"),
+            WinGame => write!(f, "{WIN_GAME}\n"),
+            LooseGame => write!(f, "{LOOSE_GAME}\n"),
+        }
+    }
+}
+
+fn new_game() -> bool {
+    loop {
+        let command_input = players_input();
+        return if command_input.eq_ignore_ascii_case("Y") {
+            true
+        } else {
+            false
+        }
+    }
+}
+
+fn start_round() {
+    let mut round_state = RoundState::RoundStarted;
     let secret_word = get_secret_word();
     let secret_word_chars: HashSet<char> = secret_word.chars().collect();
     let mut correct_guesses: HashSet<char> = HashSet::new();
@@ -51,42 +77,43 @@ fn start_round(game_state: &mut GameState) {
     let mut mistakes: usize = 0;
 
     loop {
+        if correct_guesses == secret_word_chars {
+            round_state = WinGame;
+            correct_guesses.extend(&secret_word_chars);
+        }
+        if mistakes == 6 {
+            round_state = LooseGame;
+            correct_guesses.extend(&secret_word_chars);
+        }
+
         draw_image(mistakes);
         show_word(&secret_word, &correct_guesses);
-        write_message(game_state);
+        write_message(&mut round_state);
 
-        if let GameOver(_) = game_state {
+        if round_state.is_game_over() {
             break;
         }
 
         let guess = players_input();
         if guess.chars().count() != 1 {
-            *game_state = GuessChecked(WRONG_LENGTH.to_string());
+            round_state = WrongLength;
             continue;
         }
 
-        let guess = guess.chars().next().unwrap();
+        let guess = guess.chars().next().expect("Failed");
         if correct_guesses.contains(&guess) || wrong_guesses.contains(&guess) {
-            *game_state = GuessChecked(REPEATED_GUESS.to_string());
+            round_state = RepeatedGuess;
             continue;
         }
 
         if secret_word_chars.contains(&guess) {
             correct_guesses.insert(guess);
-            if correct_guesses == secret_word_chars {
-                *game_state = GameOver(WIN_GAME.to_string());
-                continue;
-            }
-            *game_state = GuessChecked(RIGHT_GUESS.to_string());
+            round_state = RightGuess;
             continue;
         } else {
             wrong_guesses.insert(guess);
             mistakes += 1;
-            if mistakes == 6 {
-                *game_state = GameOver(LOOSE_GAME.to_string());
-                continue;
-            }
-            *game_state = GuessChecked(WRONG_GUESS.to_string());
+            round_state = WrongGuess;
             continue;
         }
     }
@@ -131,19 +158,8 @@ fn show_word(secret_word: &str, correct_guesses: &HashSet<char>) {
     println!();
 }
 
-fn write_message(game_state: &mut GameState) {
-    match game_state {
-        StartGame => println!("{}", START_PAGE_MESSAGE),
-        GameOver(value) => println!("{}", value),
-        GuessChecked(value) => {
-            println!("{}", value);
-            println!("{}", ENTER_GUESS);
-        },
-        RoundStarted => {
-            println!("{}", ENTER_GUESS);
-        },
-        _ => {}
-    }
+fn write_message(round_state: &mut RoundState) {
+    println!("{}", round_state);
 }
 
 const START_PAGE_MESSAGE: &str = "Начать новую игру? \n[Y]es/[N]o";
@@ -155,7 +171,7 @@ const WRONG_GUESS: &str = "Не угадал букву";
 const REPEATED_GUESS: &str = "Вы уже вводили эту букву";
 const WIN_GAME: &str = "Вы выиграли! Хотите начать новую игру? [Y]es/[N]o";
 const WRONG_LENGTH: &str = "Введите один символ!";
-//const WRONG_LANG: &str = "Загаданное слов состоит из русских символов";
+const WRONG_LANG: &str = "Загаданное слов состоит из русских символов";
 
 const HANGING: &str = r#"
 ██████████████████████████████████████████

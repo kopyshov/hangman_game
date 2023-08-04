@@ -50,7 +50,7 @@ impl Display for RoundState {
             WrongGuess => write!(f, "{WRONG_GUESS}\n {ENTER_GUESS}"),
             RepeatedGuess => write!(f, "{REPEATED_GUESS}\n {ENTER_GUESS}"),
             WrongLength => write!(f, "{WRONG_LENGTH}\n {ENTER_GUESS}"),
-            RoundState::WrongLanguage => write!(f, "{WRONG_LANG}\n {ENTER_GUESS}"),
+            RoundState::WrongLanguage => write!(f, "{WRONG_LANG}\n + {ENTER_GUESS}"),
             WinGame => write!(f, "{WIN_GAME}\n"),
             LooseGame => write!(f, "{LOOSE_GAME}\n"),
         }
@@ -88,7 +88,7 @@ fn start_round() {
 
         draw_image(mistakes);
         show_word(&secret_word, &correct_guesses);
-        write_message(&mut round_state);
+        write_message(round_state);
 
         if round_state.is_game_over() {
             break;
@@ -158,7 +158,7 @@ fn show_word(secret_word: &str, correct_guesses: &HashSet<char>) {
     println!();
 }
 
-fn write_message(round_state: &mut RoundState) {
+fn write_message(round_state: RoundState) {
     println!("{}", round_state);
 }
 

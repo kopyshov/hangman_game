@@ -88,7 +88,7 @@ fn start_round() {
 
         draw_image(mistakes);
         show_word(&secret_word, &correct_guesses);
-        write_message(round_state);
+        write_message(&mut round_state);
 
         if round_state.is_game_over() {
             break;
@@ -158,7 +158,7 @@ fn show_word(secret_word: &str, correct_guesses: &HashSet<char>) {
     println!();
 }
 
-fn write_message(round_state: RoundState) {
+fn write_message(round_state: &mut RoundState) {
     println!("{}", round_state);
 }
 

@@ -3,7 +3,7 @@ use std::fmt::{Display, Formatter};
 use std::io;
 use rand::Rng;
 use anyhow::{Result, Context};
-use crate::RoundState::{LooseGame, RepeatedGuess, RightGuess, WinGame, WrongGuess, WrongLength};
+use crate::RoundState::{LooseGame, RepeatedGuess, RightGuess, WinGame, WrongGuess, WrongLanguage, WrongLength};
 
 fn main() {
     start_game();
@@ -35,11 +35,7 @@ enum RoundState {
 
 impl RoundState {
     fn is_game_over(&self) -> bool {
-        match self {
-            WinGame => true,
-            LooseGame => true,
-            _ => false,
-        }
+        matches!(self, WinGame | LooseGame)
     }
 }
 
@@ -47,13 +43,13 @@ impl Display for RoundState {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match *self {
             RoundState::RoundStarted => write!(f, "{ENTER_GUESS}"),
-            RightGuess => write!(f, "{RIGHT_GUESS}\n {ENTER_GUESS}"),
-            WrongGuess => write!(f, "{WRONG_GUESS}\n {ENTER_GUESS}"),
-            RepeatedGuess => write!(f, "{REPEATED_GUESS}\n {ENTER_GUESS}"),
-            WrongLength => write!(f, "{WRONG_LENGTH}\n {ENTER_GUESS}"),
-            RoundState::WrongLanguage => write!(f, "{WRONG_LANG}\n + {ENTER_GUESS}"),
-            WinGame => write!(f, "{WIN_GAME}\n"),
-            LooseGame => write!(f, "{LOOSE_GAME}\n"),
+            RightGuess => writeln!(f, "{RIGHT_GUESS}\n {ENTER_GUESS}"),
+            WrongGuess => writeln!(f, "{WRONG_GUESS}\n {ENTER_GUESS}"),
+            RepeatedGuess => writeln!(f, "{REPEATED_GUESS}\n {ENTER_GUESS}"),
+            WrongLength => writeln!(f, "{WRONG_LENGTH}\n {ENTER_GUESS}"),
+            WrongLanguage => writeln!(f, "{WRONG_LANG} + {ENTER_GUESS}"),
+            WinGame => writeln!(f, "{WIN_GAME}"),
+            LooseGame => writeln!(f, "{LOOSE_GAME}\n"),
         }
     }
 }
@@ -61,11 +57,7 @@ impl Display for RoundState {
 fn new_game() -> bool {
     loop {
         let command_input = players_input();
-        return if command_input.eq_ignore_ascii_case("Y") {
-            true
-        } else {
-            false
-        }
+        return command_input.eq_ignore_ascii_case("Y")
     }
 }
 
@@ -87,7 +79,7 @@ fn start_round() {
             correct_guesses.extend(&secret_word_chars);
         }
 
-        draw_image(mistakes);
+        draw_image(mistakes).expect("Failed update screen");
         show_word(&secret_word, &correct_guesses);
         write_message(&mut round_state);
 
@@ -101,7 +93,13 @@ fn start_round() {
             continue;
         }
 
-        let guess = guess.chars().next().expect("Failed");
+        let guess = guess.chars().next().expect("Failed to get symbol");
+
+        if !is_russian_letter(guess) {
+            round_state = WrongLanguage;
+            continue;
+        }
+
         if correct_guesses.contains(&guess) || wrong_guesses.contains(&guess) {
             round_state = RepeatedGuess;
             continue;
@@ -118,6 +116,10 @@ fn start_round() {
             continue;
         }
     }
+}
+
+fn is_russian_letter(c: char) -> bool {
+    c.is_alphabetic() && c.is_ascii() && c.is_lowercase() && (c as u32 >= 1072 && c as u32 <= 1103)
 }
 
 fn players_input() -> String {
@@ -173,7 +175,7 @@ const WRONG_GUESS: &str = "Не угадал букву";
 const REPEATED_GUESS: &str = "Вы уже вводили эту букву";
 const WIN_GAME: &str = "Вы выиграли! Хотите начать новую игру? [Y]es/[N]o";
 const WRONG_LENGTH: &str = "Введите один символ!";
-const WRONG_LANG: &str = "Загаданное слов состоит из русских символов";
+const WRONG_LANG: &str = "Введите букву русского языка";
 
 const HANGING: &str = r#"
 ██████████████████████████████████████████

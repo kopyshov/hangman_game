@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
 use std::io;
 use rand::Rng;
+use anyhow::{Result, Context};
 use crate::RoundState::{LooseGame, RepeatedGuess, RightGuess, WinGame, WrongGuess, WrongLength};
 
 fn main() {
@@ -132,9 +133,9 @@ fn get_secret_word() -> String {
     secret_word
 }
 
-fn draw_image(mistakes: usize) {
+fn draw_image(mistakes: usize) -> Result<()> {
     let term = console::Term::stdout();
-    term.clear_screen().expect("Не удалось очистить консоль");
+    term.clear_screen().with_context(|| "Failed to clear screen")?;
     match mistakes {
         0 => println!("{}", HANGING),
         1 => println!("{}", HANGMAN_HEAD),
@@ -145,6 +146,7 @@ fn draw_image(mistakes: usize) {
         6 => println!("{}", HANGMAN_RIGHT_LEG),
         _ => {}
     }
+    Ok(())
 }
 
 fn show_word(secret_word: &str, correct_guesses: &HashSet<char>) {

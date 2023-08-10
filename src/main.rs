@@ -8,7 +8,7 @@ use regex::Regex;
 use crate::RoundState::{ErrorDrawImage, ErrorInput, LooseGame, RepeatedGuess, RightGuess, WinGame, WrongGuess, WrongLanguage, WrongLength};
 
 fn main() {
-    println!("{}", START_PAGE_MESSAGE);
+    write_message(&mut RoundState::GameStarted);
     start_game();
 }
 
@@ -24,7 +24,7 @@ fn start_game() {
                 }
             },
             Err(_) => {
-                println!("Произошла ошибка ввода символа. Повторить попытку? Введите Y/N");
+                write_message(&mut ErrorInput);
                 continue;
             }
         }
@@ -33,6 +33,7 @@ fn start_game() {
 
 #[derive(PartialEq)]
 enum RoundState {
+    GameStarted,
     RoundStarted,
     ErrorInput,
     ErrorDrawImage,
@@ -54,6 +55,7 @@ impl RoundState {
 impl Display for RoundState {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match *self {
+            RoundState::GameStarted => write!(f, "{START_PAGE_MESSAGE}"),
             RoundState::RoundStarted => write!(f, "{ENTER_GUESS}"),
             ErrorInput => write!(f, "{ERROR_INPUT}"),
             ErrorDrawImage => write!(f, "{ERROR_DRAW_IMAGE}"),

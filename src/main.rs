@@ -2,10 +2,12 @@ use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
 use std::io;
 use std::io::{BufRead, Error, Read};
+use std::process::exit;
 use rand::Rng;
 use anyhow::{Result, Context};
 use regex::Regex;
-use crate::RoundState::{ErrorDrawImage, ErrorInput, LooseGame, RepeatedGuess, RightGuess, WinGame, WrongGuess, WrongLanguage, WrongLength};
+use crate::InputState::{ErrorInput, WrongLanguage};
+use crate::RoundState::{LooseGame, RepeatedGuess, RightGuess, WinGame, WrongGuess};
 
 fn main() {
     println!("{}", START_PAGE_MESSAGE);
@@ -14,19 +16,11 @@ fn main() {
 
 fn start_game() {
     loop {
-        let start_new_game = new_game();
-        match start_new_game {
-            Ok(value) => {
-                if value {
-                    start_round();
-                } else {
-                    break;
-                }
-            },
-            Err(_) => {
-                println!("Произошла ошибка ввода символа. Повторить попытку? Введите Y/N");
-                continue;
-            }
+        let start_new_game = new_game().unwrap();
+        if start_new_game {
+            start_round();
+        } else {
+            break;
         }
     }
 }
@@ -34,13 +28,9 @@ fn start_game() {
 #[derive(PartialEq)]
 enum RoundState {
     RoundStarted,
-    ErrorInput,
-    ErrorDrawImage,
     RightGuess,
     WrongGuess,
     RepeatedGuess,
-    WrongLength,
-    WrongLanguage,
     WinGame,
     LooseGame,
 }
@@ -55,33 +45,40 @@ impl Display for RoundState {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match *self {
             RoundState::RoundStarted => write!(f, "{ENTER_GUESS}"),
-            ErrorInput => write!(f, "{ERROR_INPUT}"),
-            ErrorDrawImage => write!(f, "{ERROR_DRAW_IMAGE}"),
             RightGuess => write!(f, "{RIGHT_GUESS} {ENTER_GUESS}"),
             WrongGuess => write!(f, "{WRONG_GUESS} {ENTER_GUESS}"),
             RepeatedGuess => write!(f, "{REPEATED_GUESS} {ENTER_GUESS}"),
-            WrongLength => write!(f, "{WRONG_LENGTH} {ENTER_GUESS}"),
-            WrongLanguage => write!(f, "{WRONG_LANG}"),
             WinGame => write!(f, "{WIN_GAME}"),
             LooseGame => write!(f, "{LOOSE_GAME}"),
         }
     }
 }
 
+#[derive(PartialEq)]
+enum InputState {
+    CorrectInput,
+    ErrorInput,
+    WrongLength,
+    WrongLanguage,
+}
+
+impl Display for InputState {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match *self {
+            ErrorInput => write!(f, "{ERROR_INPUT}"),
+            InputState::WrongLength => write!(f, "{WRONG_LENGTH} {ENTER_GUESS}"),
+            WrongLanguage => write!(f, "{WRONG_LANG}"),
+            InputState::CorrectInput => write!(f, ""),
+        }
+    }
+}
+
 fn new_game() -> Result<bool, Error> {
-    let command_input = players_input();
-    match command_input {
-        Ok(value) => Ok(value.trim().eq_ignore_ascii_case("Y")),
-        Err(e) => Err(e),
-    }
+    let command_input = players_input().unwrap();
+    Ok(command_input == 'Д')
 }
-fn players_input() -> Result<String, Error> {
-    let mut input = String::new();
-    match io::BufReader::new(io::stdin().take(48)).read_line(&mut input) {
-        Ok(_) => Ok(input.trim().parse().unwrap()),
-        Err(e) => Err(e),
-    }
-}
+
+const LIMIT_MISTAKES: usize = 6;
 
 fn start_round() {
     let mut round_state = RoundState::RoundStarted;
@@ -96,18 +93,12 @@ fn start_round() {
             round_state = WinGame;
             correct_guesses.extend(&secret_word_chars);
         }
-        if mistakes == 6 {
+        if mistakes == LIMIT_MISTAKES {
             round_state = LooseGame;
             correct_guesses.extend(&secret_word_chars);
         }
 
-        match draw_image(mistakes) {
-            Ok(value) => value,
-            Err(_) => {
-                round_state = ErrorDrawImage;
-                continue;
-            }
-        };
+        draw_image(mistakes).expect("Failed to draw image");
         show_word(&secret_word, &correct_guesses);
         write_message(&mut round_state);
 
@@ -115,32 +106,7 @@ fn start_round() {
             break;
         }
 
-        let guess = players_input();
-        let guess: Result<String, Error> = match guess {
-            Ok(value) => Ok(value),
-            Err(_) => {
-                round_state = ErrorInput;
-                continue;
-            },
-        };
-        let guess = guess.unwrap();
-        if guess.chars().count() != 1 {
-            round_state = WrongLength;
-            continue;
-        }
-
-        if !is_russian_letter(&guess) {
-            round_state = WrongLanguage;
-            continue;
-        }
-
-        let guess = match guess.chars().next() {
-            Some(guess) => Some(guess).unwrap(),
-            None => {
-                round_state = ErrorInput;
-                continue;
-            }
-        };
+        let guess = players_input().unwrap();
 
         if correct_guesses.contains(&guess) || wrong_guesses.contains(&guess) {
             round_state = RepeatedGuess;
@@ -156,6 +122,25 @@ fn start_round() {
             mistakes += 1;
             round_state = WrongGuess;
             continue;
+        }
+    }
+}
+
+fn players_input() -> Result<char, Error> {
+    loop {
+        let mut input_state: InputState = InputState::CorrectInput;
+        write_message(&mut input_state);
+        let mut input = String::new();
+        io::BufReader::new(io::stdin().take(64)).read_line(&mut input)?;
+        let input = input.trim();
+        if !is_russian_letter(&input) {
+            input_state = InputState::WrongLanguage;
+        }
+        if input.chars().count() != 1 {
+            input_state = InputState::WrongLength;
+        }
+        if input_state == InputState::CorrectInput {
+            return Ok(input.parse().unwrap());
         }
     }
 }
@@ -199,8 +184,8 @@ fn show_word(secret_word: &str, correct_guesses: &HashSet<char>) {
     println!();
 }
 
-fn write_message(round_state: &mut RoundState) {
-    println!("{}", round_state);
+fn write_message(state: &impl Display) {
+    print!("{}", state);
 }
 
 const START_PAGE_MESSAGE: &str = "Начать новую игру? \n[Y]es/[N]o";
